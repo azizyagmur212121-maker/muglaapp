@@ -461,6 +461,31 @@ window.openBookingForm = async (date, time) => {
 
             saveTicketToDevice(ticketId, selectedService.name, date);
 
+            // =======================================================
+            // YENİ EKLENEN: ONESIGNAL GERÇEK PUSH NOTIFICATION ATEŞLEME
+            // =======================================================
+            try {
+                fetch("https://onesignal.com/api/v1/notifications", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json; charset=utf-8",
+                        "Authorization": "Basic os_v2_app_7ldekab53zce3a5s25zskmbvhqs7c52ohtwelxey4qvdu2klr4dkheybqovdxfb5dnk5746ocwtz3vwtkjerogydjdjnlmzmk5pf76y"
+                    },
+                    body: JSON.stringify({
+                        app_id: "fac64500-3dde-444d-83b2-d7732530353c",
+                        target_channel: "push",
+                        filters: [
+                            { "field": "tag", "key": "businessId", "relation": "=", "value": targetBusinessId }
+                        ],
+                        headings: { "tr": "🔔 Yeni Randevu Geldi!" },
+                        contents: { "tr": `${formValues.name}, ${selectedService.name} işlemi için randevu oluşturdu. (Fiş: ${ticketId})` }
+                    })
+                });
+            } catch (err) {
+                console.error("OneSignal bildirim hatası:", err);
+            }
+            // =======================================================
+
             Swal.fire({
                 title: 'Randevunuz Alındı! 🎉',
                 html: `
@@ -539,7 +564,6 @@ window.queryAppointment = async () => {
                 const isPast = appDateObj < new Date();
                 let reviewBtnHtml = '';
 
-                // Burada da openReviewModal için parametreleri güncelledim
                 if (appData.status === 'confirmed' && isPast && !appData.reviewed) {
                     reviewBtnHtml = `<button onclick="openReviewModal('${appDoc.id}', '${appData.personnelName || ''}', '${appData.clientName}', '${targetBusinessId}', '${ticketId}')" style="margin-top:15px; width:100%; background:#f59e0b; color:#fff; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 4px 10px rgba(245,158,11,0.3);">⭐ Hizmeti Değerlendir</button>`;
                 } else if (appData.reviewed) {
@@ -569,21 +593,17 @@ window.queryAppointment = async () => {
     }
 };
 
-// ==========================================
-// YENİ, DAHA AKILLI VE HATASIZ YORUM SORMA ZEKASI
-// ==========================================
 async function checkPastAppointmentsForReview() {
     let allTickets = JSON.parse(localStorage.getItem('muglaapp_tickets')) || [];
     if (allTickets.length === 0) return;
 
-    let popupShown = false; // Bir girişte sadece 1 kere sorması için
+    let popupShown = false;
 
     for (let t of allTickets) {
         if (t.reviewedLocal || popupShown) continue;
         if (!t.businessId || !t.ticketId) continue;
 
         try {
-            // Müşterinin cihazındaki bileti veritabanından buluyoruz
             const q = query(collection(db, "businesses", t.businessId, "appointments"), where("ticketId", "==", t.ticketId));
             const snap = await getDocs(q);
 
@@ -591,28 +611,21 @@ async function checkPastAppointmentsForReview() {
                 const appDoc = snap.docs[0];
                 const appData = appDoc.data();
 
-                // Zaten yorumlandıysa yerelde de işaretle ve atla
                 if (appData.reviewed) {
                     t.reviewedLocal = true;
                     localStorage.setItem('muglaapp_tickets', JSON.stringify(allTickets));
                     continue;
                 }
 
-                // Randevu onaylanmış mı?
                 if (appData.status === 'confirmed') {
 
-                    // SAAT KONTROLÜ İÇİN "BİTİŞ SAATİNİ" (endTime) BAZ ALIYORUZ
                     const endTimeStr = appData.endTime ? appData.endTime : appData.time;
-
-                    // Randevu Tarihi ve Bitiş Saatini birleştirip zaman objesi yapıyoruz
                     const appDateObj = new Date(`${appData.date}T${endTimeStr}:00`);
                     const now = new Date();
 
-                    // EĞER ŞU ANKİ BİLGİSAYAR SAATİ, RANDEVU BİTİŞ SAATİNİ GEÇTİYSE POPUP ÇIKAR!
                     if (now > appDateObj) {
                         popupShown = true;
 
-                        // İşletme adını çekelim ki popup'ta şık dursun
                         let bizName = "İşletme";
                         try {
                             const bizSnap = await getDoc(doc(db, "businesses", t.businessId));
@@ -709,7 +722,6 @@ window.openReviewModal = async (appointmentId, personnelName, clientName, bizId 
 
             Toast.fire({ icon: 'success', title: 'Yorumunuz yayınlandı! Teşekkürler.' });
 
-            // Ana ekranda değil de işletme vitrinindeyse listeyi canlı güncelle
             if (bizId === targetBusinessId && typeof loadVitrinReviews === 'function') {
                 loadVitrinReviews();
             }
