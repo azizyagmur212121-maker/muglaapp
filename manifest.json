@@ -1,0 +1,16 @@
+{
+    "name": "MuğlaApp Randevu Portalı",
+    "short_name": "MuğlaApp",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#f8fafc",
+    "theme_color": "#0ea5e9",
+    "icons": [
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/2838/2838779.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

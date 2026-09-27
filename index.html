@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MuğlaApp Randevu Portalı</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- YENİ: 404 Hatasını çözen ve mobil uygulama gibi yüklenmeyi sağlayan PWA Zırhı -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f1f5f9">
+</head>
+
+<body>
+
+    <!-- Yükleniyor Ekranı -->
+    <div id="loader" class="loader-container">
+        <div class="spinner"></div>
+        <p id="loader-text">Sistem yükleniyor...</p>
+    </div>
+
+    <!-- Hata Ekranı -->
+    <div id="error-screen" class="hidden error-container">
+        <div class="error-icon">😕</div>
+        <h2>Bulunamadı</h2>
+        <p>Lütfen linki kontrol edin veya ana sayfaya dönün.</p>
+        <button onclick="window.location.href='index.html'" class="primary-btn" style="margin-top:20px;">Ana Sayfaya
+            Dön</button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 1. ANA PORTAL EKRANI (İşletmelerin Listelendiği Yer) -->
+    <!-- ========================================== -->
+    <div id="portal-container" class="portal-container hidden">
+        <header class="portal-header">
+            <div class="portal-logo-area">
+                <span class="portal-logo-icon">✨</span>
+                <h1>MuğlaApp <span class="primary-text">Randevu</span></h1>
+            </div>
+            <p>Muğla'nın en iyi işletmelerinden anında randevu alın.</p>
+        </header>
+
+        <!-- Kategori Filtreleri -->
+        <div class="category-filters">
+            <button class="cat-btn active" data-filter="all">🌟 Tümü</button>
+            <button class="cat-btn" data-filter="kuafor">✂️ Kuaför</button>
+            <button class="cat-btn" data-filter="guzellik">💅 Güzellik Merkezi</button>
+            <button class="cat-btn" data-filter="diyetisyen">🥑 Diyetisyen</button>
+        </div>
+
+        <div id="businesses-grid" class="businesses-grid"></div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 2. İŞLETME VİTRİNİ (Randevu Alınan Yer) -->
+    <!-- ========================================== -->
+    <div id="app-container" class="container hidden">
+
+        <!-- Üst Menü -->
+        <div class="vitrin-top-nav">
+            <button onclick="window.location.href='index.html'" class="back-btn">
+                <span style="font-size: 1.2rem; margin-right: 5px;">←</span> Geri
+            </button>
+            <button onclick="queryAppointment()" class="query-btn">🔍 Fiş Sorgula</button>
+        </div>
+
+        <!-- YENİ: PREMIUM PROFİL BAŞLIĞI -->
+        <header class="business-header">
+            <div id="business-logo" class="logo-placeholder">?</div>
+            <h1 id="business-name">Yükleniyor...</h1>
+            <p id="business-address" class="text-muted">Adres bilgisi aranıyor...</p>
+
+            <!-- YENİ: YOL TARİFİ BUTONU -->
+            <button id="direction-btn" class="direction-btn hidden">📍 Yol Tarifi Al</button>
+
+            <!-- İŞLETME PUANI -->
+            <div id="business-rating-badge" class="rating-badge hidden">
+                <span class="star-icon">⭐</span>
+                <span id="b-rating-val">0.0</span>
+                <span id="b-rating-count" class="rating-count">(0 Yorum)</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- İŞLETME GALERİSİ -->
+            <section id="step-gallery" class="booking-step hidden"
+                style="border-bottom: 1px solid #e2e8f0; padding-bottom: 30px;">
+                <div class="step-title" style="margin-bottom: 15px;">🖼️ İşletme Galerisi</div>
+                <div id="vitrin-gallery-slider" class="gallery-slider">
+                    <!-- Javascript ile dolacak -->
+                </div>
+            </section>
+
+            <!-- ADIM 1: HİZMET SEÇİMİ -->
+            <section id="step-1" class="booking-step" style="margin-top: 25px;">
+                <div class="step-title"><span>1</span> Hizmet Seçin</div>
+                <div id="services-grid" class="services-grid"></div>
+            </section>
+
+            <!-- ADIM 1.5: PERSONEL SEÇİMİ -->
+            <section id="step-personnel" class="booking-step hidden">
+                <div class="step-title"><span>2</span> Personel Seçin</div>
+                <div id="personnel-grid" class="services-grid"></div>
+            </section>
+
+            <!-- ADIM 2: TARİH VE SAAT -->
+            <section id="step-2" class="booking-step hidden">
+                <div class="step-title"><span>3</span> Tarih ve Saat Seçin</div>
+                <div class="date-selector">
+                    <input type="date" id="booking-date" class="modern-input">
+                </div>
+                <div id="slots-container" class="slots-grid">
+                    <p class="empty-text">Saatleri görmek için tarih seçin.</p>
+                </div>
+            </section>
+
+            <!-- MÜŞTERİ YORUMLARI BÖLÜMÜ -->
+            <section id="step-reviews" class="booking-step"
+                style="margin-top: 50px; padding-top: 30px; border-top: 1px solid #e2e8f0;">
+                <div class="step-title" style="margin-bottom: 10px;">💬 Müşteri Değerlendirmeleri</div>
+                <p class="text-muted" style="margin-bottom: 20px; font-size: 0.9rem;">Bu işletmeden hizmet alan
+                    müşterilerin yorumları.</p>
+                <div id="vitrin-reviews-container" class="vitrin-reviews-list">
+                    <p class="empty-text">Henüz yorum yapılmamış.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- TAM EKRAN FOTOĞRAF (LIGHTBOX) -->
+    <div id="lightbox-overlay" class="lightbox-overlay hidden" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img id="lightbox-img" class="lightbox-img" src="" alt="Galeri Görseli">
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+
+</html>
