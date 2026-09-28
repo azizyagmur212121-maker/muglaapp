@@ -462,11 +462,15 @@ window.openBookingForm = async (date, time) => {
             saveTicketToDevice(ticketId, selectedService.name, date);
 
             // =======================================================
-            // YENİ EKLENEN: GOOGLE KÖPRÜSÜ ÜZERİNDEN PUSH BİLDİRİMİ ATEŞLEME
+            // GOOGLE APPS SCRIPT ÜZERİNDEN CORS KİLİDİNİ KIRAN BİLDİRİM KODU (no-cors ve text/plain)
             // =======================================================
             try {
                 fetch("https://script.google.com/macros/s/AKfycbxopNs-4VJukScvVE0umngjhLHFCr65F1ZKMr1Mm8rOPdjfHtnqoYTVakGQQP9KReWV/exec", {
                     method: "POST",
+                    mode: "no-cors", // HAYAT KURTARAN KOD: Tarayıcıya güvenlik önlemini yoksaydırır
+                    headers: {
+                        "Content-Type": "text/plain;charset=utf-8" // JSON kılığını çıkarıp metin gibi gönderiyoruz
+                    },
                     body: JSON.stringify({
                         filters: [
                             { "field": "tag", "key": "businessId", "relation": "=", "value": targetBusinessId }
@@ -474,7 +478,7 @@ window.openBookingForm = async (date, time) => {
                         headings: { "tr": "🔔 Yeni Randevu Geldi!" },
                         contents: { "tr": `${formValues.name}, ${selectedService.name} işlemi için randevu oluşturdu. (Fiş: ${ticketId})` }
                     })
-                }).then(res => console.log("Google köprüsü tetiklendi.")).catch(e => console.error("Fetch köprü hatası:", e));
+                }).then(() => console.log("Google köprüsü tetiklendi (CORS aşıldı).")).catch(e => console.error("Fetch köprü hatası:", e));
             } catch (err) {
                 console.error("Bildirim köprü catch hatası:", err);
             }
